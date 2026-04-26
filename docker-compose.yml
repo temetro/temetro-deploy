@@ -1,0 +1,49 @@
+name: temetro
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: temetro-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: temetro
+      POSTGRES_USER: temetro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-temetro}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temetro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    container_name: temetro-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://temetro:${POSTGRES_PASSWORD:-temetro}@postgres:5432/temetro
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+
+  docs:
+    build:
+      context: ../..
+      dockerfile: apps/docs/Dockerfile
+    container_name: temetro-docs
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+
+volumes:
+  postgres_data:
