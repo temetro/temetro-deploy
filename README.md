@@ -28,6 +28,13 @@ Open:
 - `http://localhost:3000` for the dashboard
 - `http://localhost:3001/docs` for documentation
 
+Compose now starts four application services:
+
+- `postgres` for database storage
+- `api` for the internal Express dashboard backend
+- `web` for the Next.js frontend and Better Auth routes
+- `docs` for the documentation site
+
 ## Environment variables
 
 | Variable | Required | Description | Example |
@@ -35,6 +42,7 @@ Open:
 | `POSTGRES_PASSWORD` | Yes | Password used by the PostgreSQL `temetro` user | `change-me-now` |
 | `APP_URL` | Yes | Public URL for the dashboard and Better Auth base URL | `http://localhost:3000` |
 | `BETTER_AUTH_SECRET` | Yes | Secret used by Better Auth to sign and protect sessions | generated with `openssl rand -base64 32` |
+| `INTERNAL_API_URL` | No | Internal Next-to-Express service URL. In Docker Compose this is set automatically to `http://api:4000`. | `http://api:4000` |
 | `SMTP_HOST` | No | SMTP hostname for outbound email | `smtp.example.org` |
 | `SMTP_PORT` | No | SMTP port for outbound email | `587` |
 | `SMTP_USER` | No | SMTP username | `temetro@example.org` |
@@ -90,7 +98,15 @@ If the web container cannot connect to PostgreSQL:
 - Confirm `postgres` is healthy with `docker compose ps`
 - Check the value of `POSTGRES_PASSWORD` in `.env`
 - Restart the stack after updating credentials
-- Review logs with `docker compose logs -f postgres web`
+- Review logs with `docker compose logs -f postgres api web`
+
+### Dashboard data API issues
+
+If the dashboard shell loads but the main `/dashboard` content fails:
+
+- Confirm the `api` container is running with `docker compose ps`
+- Check the Express logs with `docker compose logs -f api`
+- Confirm `web` can reach `http://api:4000` inside Compose
 
 ### Permission issues
 

@@ -25,16 +25,34 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: temetro-web
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://temetro:${POSTGRES_PASSWORD:-temetro}@postgres:5432/temetro
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${APP_URL:-http://localhost:3000}
+      INTERNAL_API_URL: http://api:4000
       NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     ports:
       - "3000:3000"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    command: npm --workspace @temetro/web run start:api
+    container_name: temetro-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+    ports:
+      - "4000:4000"
 
   docs:
     build:
